@@ -1,5 +1,7 @@
-FROM ekidd/rust-musl-builder:stable as builder
+FROM tomberek/test-docker as builder
+RUN flox-install cargo stdenv.cc
 
+WORKDIR /home/rust/src/
 RUN USER=root cargo new --bin rust-docker-web
 WORKDIR ./rust-docker-web
 COPY ./Cargo.lock ./Cargo.lock
@@ -9,11 +11,12 @@ RUN rm src/*.rs
 
 ADD . ./
 
-RUN rm ./target/x86_64-unknown-linux-musl/release/deps/rust_docker_web*
+RUN rm ./target/*/deps/rust_docker_web* -f
 RUN cargo build --release
 
 
-FROM alpine:latest
+FROM tomberek/test-docker
+RUN flox-install stdenv.cc busybox
 
 ARG APP=/usr/src/app
 
@@ -25,11 +28,7 @@ ENV TZ=Etc/UTC \
 RUN addgroup -S $APP_USER \
     && adduser -S -g $APP_USER $APP_USER
 
-RUN apk update \
-    && apk add --no-cache ca-certificates tzdata \
-    && rm -rf /var/cache/apk/*
-
-COPY --from=builder /home/rust/src/rust-docker-web/target/x86_64-unknown-linux-musl/release/rust-docker-web ${APP}/rust-docker-web
+COPY --from=builder /home/rust/src/rust-docker-web/target/release/rust-docker-web ${APP}/rust-docker-web
 
 RUN chown -R $APP_USER:$APP_USER ${APP}
 
