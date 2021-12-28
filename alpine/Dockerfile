@@ -16,7 +16,7 @@ RUN cargo build --release
 
 
 FROM tomberek/test-docker
-RUN flox-install stdenv.cc busybox
+RUN flox-install stdenv.cc.libc busybox
 
 ARG APP=/usr/src/app
 
